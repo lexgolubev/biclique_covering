@@ -1,4 +1,4 @@
-package by.golubev.covering.sptree;
+package by.bsu.covering.stgraph;
 
 import java.util.HashSet;
 import java.util.Set;

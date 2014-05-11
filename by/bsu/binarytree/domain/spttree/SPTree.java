@@ -14,7 +14,7 @@ import by.bsu.binarytree.alg.Algorithms;
 import by.bsu.binarytree.domain.result.ResultNode;
 import by.bsu.binarytree.domain.result.ResultRecord;
 import by.bsu.binarytree.util.SPTreeException;
-import by.golubev.covering.sptree.STGraph;
+import by.bsu.covering.stgraph.STGraph;
 
 public class SPTree {
 	private ArrayList<Node> tree = new ArrayList<Node>();
