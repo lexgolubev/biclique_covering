@@ -1,14 +1,13 @@
 package by.bsu.binarytree.alg;
 
-import java.util.ArrayList;
-
-import by.bsu.binarytree.domain.SPTree;
 import by.bsu.binarytree.util.SPTreeException;
 
 public class Algorithms {
 
 	private static boolean GetBit(int x, int bit) {
-		return (x & (1 << (bit - 1))) != 0;
+	/*	if (((x & (1 << (bit - 1))) != 0) && GetBitCount(x) == 1)
+		System.out.println("x = " + x + " bit = " + bit + " result = " + ((x & (1 << (bit - 1))) != 0));
+*/		return (x & (1 << (bit - 1))) != 0;
 	}
 
 	public static int GetBitCount(int x) {
@@ -88,7 +87,8 @@ public class Algorithms {
 				|| GetBit(a, 5) || GetBit(a, 6) || GetBit(b, 5) || GetBit(b, 6)
 				|| GetBit(c, 1) || GetBit(c, 2) && !GetBit(a, 2)
 				|| GetBit(c, 3) && !GetBit(b, 3) || GetBit(c, 4)
-				&& !(GetBit(a, 1) && GetBit(b, 1)))
+				&& !(GetBit(a, 1) && GetBit(b, 1)) || (c == 0 && GetBit(b, 1))
+			    || (c == 0 && GetBit(a, 1)))
 			return -1;
 
 		int s = 0;

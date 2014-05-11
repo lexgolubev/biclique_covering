@@ -1,4 +1,4 @@
-package by.bsu.binarytree.domain;
+package by.bsu.binarytree.domain.spttree;
 
 import by.bsu.binarytree.util.SPTreeException;
 
@@ -15,6 +15,10 @@ public enum NodeType {
 		return value;
 	}
 	
+	public boolean isLeaf() {
+		return value == 1;
+	}
+	
 	public static NodeType getByValue(int value) throws SPTreeException {
 		switch (value) {
 		case 0: return EMPTY;
@@ -23,5 +27,9 @@ public enum NodeType {
 		case 3: return PAR;
 		default: throw new SPTreeException("Node type is out of range");
 		}
+	}
+	
+	public static boolean isSP(int value) {
+		return (value == 2) || (value == 3);
 	}
 }

@@ -1,37 +1,41 @@
-package by.bsu.binarytree.domain;
+package by.bsu.binarytree.domain.spttree;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.Set;
-
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultEdge;
 
 import by.bsu.binarytree.alg.Algorithms;
+import by.bsu.binarytree.domain.result.ResultNode;
+import by.bsu.binarytree.domain.result.ResultRecord;
 import by.bsu.binarytree.util.SPTreeException;
 import by.golubev.covering.sptree.STGraph;
 
 public class SPTree {
 	private ArrayList<Node> tree = new ArrayList<Node>();
+	private ArrayList<ResultRecord> resultRecord = new ArrayList<ResultRecord>();
 	private static final int INF = 10000000;
 	private static final int NUMBER_OF_PROPERTIES = 6;
-	private static final int MAX_MASK = 1 << NUMBER_OF_PROPERTIES;;
-	private int root;
+	private static final int MAX_MASK = 1 << NUMBER_OF_PROPERTIES;
+        private int result = INF;
+	private int numberSPNodes = 0;
+	private int graphVertexCount = 0;
+	private int minCoveringSize;
 
 	private void buildEmptyTree(int size) {
 		tree.clear();
+		numberSPNodes = 0;
 		for (int i = 0; i < size + 1; i++) {
 			Node node = new Node();
 			node.type = NodeType.EMPTY;
 			node.left = -1;
 			node.right = -1;
 			tree.add(node);
-			root = 0;
 		}
 	}
 
@@ -46,10 +50,8 @@ public class SPTree {
 		FileReader fin = new FileReader(fileName);
 		Scanner inFile = new Scanner(fin);
 		if (inFile.hasNextInt()) {
-			buildEmptyTree(inFile.nextInt());
-			if (inFile.hasNextInt()) {
-			    tree.get(0).type = NodeType.getByValue(inFile.nextInt());
-			}
+			buildEmptyTree(inFile.nextInt() + 1);
+			//tree.get(1).type = NodeType.getByValue(inFile.nextInt());
 		} else {
 			throw new SPTreeException("Incorrect File Structure");
 		}
@@ -60,6 +62,9 @@ public class SPTree {
 				prev = new Integer(inFile.next());
 				type = new Integer(inFile.next());
 				tree.get(count).type = NodeType.getByValue(type);
+				if (NodeType.isSP(type)) {
+					numberSPNodes ++;
+				}
 				if (prev >= 0) {
 					if (tree.get(prev).left == -1) {
 						tree.get(prev).left = count;
@@ -82,6 +87,8 @@ public class SPTree {
         Random rnd = new Random();
         SPTree sptree = new SPTree();
         List<Node> unmerged = new ArrayList<>();
+        sptree.tree.add(new Node());
+        sptree.tree.add(new Node());
         for (int i = 0; i < edgeAmount; i++) {
             Node node = new Node();
             node.type = NodeType.LEAF;
@@ -110,17 +117,47 @@ public class SPTree {
                     node.hasSTEdge = left.hasSTEdge || right.hasSTEdge;
                 }
             }
-            unmerged.remove(next + 1);
-            unmerged.remove(next);
-            unmerged.add(node);
-            sptree.tree.add(node);
+            unmerged.remove(left);
+            unmerged.remove(right);
+            unmerged.add(next, node);
+            if (unmerged.size() == 1) {
+                sptree.tree.set(1, node);
+            } else {
+                sptree.tree.add(node);
+            }
+            sptree.numberSPNodes++;
         }
-        sptree.root = sptree.tree.size() - 1;
         return sptree;
     }
-
+    
+    public int setFirstAndLastVertices() {
+		graphVertexCount = setFirstAndLastVerticesRec(tree.get(1), 1, 2, 2, 0, 0);
+		return graphVertexCount;
+	}
+    
+    private int setFirstAndLastVerticesRec(Node node, Integer first, Integer last, Integer usedNumbers,
+            Integer x, Integer y) {
+        node.first = first;
+        node.last = last;
+        node.x = x;
+        node.y = y;
+        if (node.type == NodeType.PAR) {
+            usedNumbers = setFirstAndLastVerticesRec(tree.get(node.left), first, last, usedNumbers,
+                    x, y);
+            usedNumbers = setFirstAndLastVerticesRec(tree.get(node.right), first, last, usedNumbers,
+                    x, y + 1);
+        } else if (node.type == NodeType.SEQ) {
+            int middle = usedNumbers + 1;           
+            usedNumbers = setFirstAndLastVerticesRec(tree.get(node.left), first, middle, usedNumbers + 1,
+                    x, y);
+            usedNumbers = setFirstAndLastVerticesRec(tree.get(node.right), middle, last, usedNumbers,
+                    x + 1, y);
+        } 
+        return usedNumbers;
+    }
+    
     public void print() {
-        printSubtree(root);
+        printSubtree(1);
     }
     
 	private void printSubtree(int nodeNumber) {
@@ -132,31 +169,8 @@ public class SPTree {
 	    }
 	}
 	
-	public void bc() throws SPTreeException {
-		int[] bc = generateBC(root);
-		int result = INF;
-
-		int resmask = -1;
-
-		for (int i = 0; i < MAX_MASK; ++i)
-			if (!((Algorithms.GB(i, 5) || Algorithms.GB(i, 6)) && !Algorithms
-					.GB(i, 1))) {
-
-				if (bc[i] < result) {
-					result = bc[i];
-					// result = min (result, bc[i]);
-					resmask = i;
-				}
-			}
-
-		System.out.println("res: " + result);
-		System.out.println(resmask);
-	}
-	
 	public int[] generateBC(int nodeNumber) throws SPTreeException {
-        int i;
         int[] hc;
-        char flag = ' ';
 
         if (nodeNumber == -1) {
             throw new SPTreeException("Bad node number");
@@ -180,8 +194,34 @@ public class SPTree {
         return hc;
     }
 
+	public ArrayList<ResultRecord> bc() throws SPTreeException {
+		int[] bc = generateBC(1);
+		result = INF;
 
-	public static int[] leafFunction() {
+		int resmask = -1;
+
+		for (int i = 0; i < MAX_MASK; ++i)
+			if (!((Algorithms.GB(i, 5) || Algorithms.GB(i, 6)) && !Algorithms
+					.GB(i, 1))) {
+
+				if (bc[i] < result) {
+					result = bc[i];
+					// result = min (result, bc[i]);
+					resmask = i;
+				}
+			}
+
+		//System.out.println("result: " + result);
+		//System.out.println("resmask: "+ resmask);
+		minCoveringSize = result;
+		return resultRecord;
+	}
+
+	public int getMinCoveringSize() {
+        return minCoveringSize;
+    }
+
+    public static int[] leafFunction() {
 		int[] hc = new int[MAX_MASK];
 		for (int i = 0; i < MAX_MASK; ++i) {
 			hc[i] = INF;
@@ -232,7 +272,13 @@ public class SPTree {
 //											+ Algorithms.gbString(j,
 //													NUMBER_OF_PROPERTIES)
 //											+ " hb= " + hb[j]);
-
+									ResultNode c = new ResultNode(hc[k], Algorithms.gbString(k,
+											NUMBER_OF_PROPERTIES));
+									ResultNode a = new ResultNode(ha[i], Algorithms.gbString(i,
+											NUMBER_OF_PROPERTIES));
+									ResultNode b = new ResultNode(hb[j], Algorithms.gbString(j,
+											NUMBER_OF_PROPERTIES));
+									resultRecord.add(new ResultRecord(nodeNumber,c, a, b));									
 								}
 
 								// hc[k] = min(ha[i] + hb[j] - currw, hc[k]);
@@ -241,8 +287,32 @@ public class SPTree {
 		return hc;
 	}
 
+    public int getResult() {
+		return result;
+	}
+
+	public int getNumberSPNodes() {
+		return numberSPNodes;
+	}
+
+        public boolean hasANodeLeaf(int nodeNumber) {
+		return tree.get(tree.get(nodeNumber).left).type.isLeaf();
+	}
+	
+	public boolean hasBNodeLeaf(int nodeNumber) {
+		return tree.get(tree.get(nodeNumber).right).type.isLeaf();
+	}
+
+        public ArrayList<Node> getTree() {
+		return tree;
+	}
+
+	public int getGraphVertexCount() {
+		return graphVertexCount;
+	}
+
 	public STGraph generateGraph() {
-	    return generateSubgraph(root);
+	    return generateSubgraph(1);
 	}
 	
 	private STGraph generateSubgraph(int nodeNumber) {

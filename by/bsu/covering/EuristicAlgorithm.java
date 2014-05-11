@@ -1,16 +1,16 @@
-package by.golubev.covering;
+package by.bsu.covering;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 
 import java.util.*;
 
-public class BicliqueCovering {
-    private Graph<Integer, DefaultEdge> g;
+public class EuristicAlgorithm {
+    protected Graph<Integer, DefaultEdge> g;
 
-    private List<Biclique> bicliques;
+    protected List<Biclique> bicliques;
 
-    public BicliqueCovering(Graph<Integer, DefaultEdge> g) {
+    public EuristicAlgorithm(Graph<Integer, DefaultEdge> g) {
         this.g = g;
         this.bicliques = new LinkedList<>();
         this.cover();
@@ -53,7 +53,7 @@ public class BicliqueCovering {
             }
         }
     }
-
+    
     public List<Biclique> getCovering() {
         return bicliques;
     }
@@ -62,7 +62,7 @@ public class BicliqueCovering {
         return bicliques.size();
     }
 
-    private class Biclique {
+    class Biclique {
         List<Integer> x;
 
         List<Integer> y;
